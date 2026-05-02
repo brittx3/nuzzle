@@ -1,0 +1,267 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>nuzzle 🤍</title>
+    <style>
+        :root {
+            --bg: #000000;
+            --glass: #161616;
+            --accent: #ff3b5c;
+            --text-main: #ffffff;
+            --text-dim: #a0a0a0;
+            --input-bg: #222222;
+        }
+
+        /* Essential for mobile: handles the jumping address bar */
+        html, body {
+            height: 100%;
+            margin: 0;
+            padding: 0;
+            background-color: var(--bg);
+            overflow-x: hidden;
+        }
+
+        body {
+            color: var(--text-main);
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: flex-start; /* Better for mobile scrolling */
+            padding-top: 40px;
+        }
+
+        .app-container {
+            width: 100%;
+            max-width: 375px;
+            padding: 20px;
+            text-align: center;
+            box-sizing: border-box;
+        }
+
+        h1 {
+            font-size: 3.5rem;
+            margin: 0;
+            font-weight: 800;
+            letter-spacing: -3px;
+            background: linear-gradient(to bottom, #fff, #a0a0a0);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .status-pill {
+            display: inline-block;
+            background: rgba(255, 255, 255, 0.1);
+            padding: 6px 16px;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            color: var(--text-dim);
+            margin: 10px 0 30px 0;
+        }
+
+        .card {
+            background: var(--glass);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 40px;
+            padding: 40px 24px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.5);
+            margin-bottom: 20px;
+        }
+
+        input, textarea {
+            width: 100%;
+            background: var(--input-bg) !important;
+            border: 1px solid rgba(255,255,255,0.1);
+            color: white !important;
+            padding: 15px;
+            border-radius: 15px;
+            margin: 10px 0;
+            font-size: 16px; /* Prevents auto-zoom on iPhone */
+            box-sizing: border-box;
+            outline: none;
+            -webkit-appearance: none; /* Fixes iOS shadows */
+        }
+
+        textarea { height: 120px; resize: none; }
+
+        .action-btn {
+            background: var(--accent);
+            color: white;
+            border: none;
+            width: 100%;
+            padding: 18px;
+            border-radius: 20px;
+            font-size: 1.1rem;
+            font-weight: 700;
+            cursor: pointer;
+            margin-top: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            touch-action: manipulation; /* Faster taps on mobile */
+        }
+
+        .secondary-btn {
+            background: transparent;
+            color: var(--text-dim);
+            border: 1px solid var(--text-dim);
+            margin-top: 15px;
+        }
+
+        .timer-text {
+            font-size: 2.2rem;
+            font-weight: 800;
+            color: var(--accent);
+            margin: 20px 0;
+            font-variant-numeric: tabular-nums;
+        }
+
+        .hidden { display: none; }
+        
+        .footer-icons {
+            padding-bottom: 40px;
+            font-size: 1.5rem;
+            display: flex;
+            justify-content: center;
+            gap: 25px;
+            opacity: 0.4;
+        }
+
+        #final-message {
+            font-size: 1.2rem;
+            line-height: 1.5;
+            color: #fff;
+            background: rgba(255,255,255,0.05);
+            padding: 20px;
+            border-radius: 20px;
+            word-wrap: break-word;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="app-container">
+        <h1>nuzzle</h1>
+        <div id="status" class="status-pill">waiting for you... 🫧</div>
+
+        <!-- AUTH SECTION -->
+        <div id="auth-area" class="card">
+            <input type="text" id="my-name" placeholder="your name">
+            <input type="text" id="partner-name" placeholder="partner's name">
+            <button class="action-btn" onclick="showDashboard()">enter 🤍</button>
+        </div>
+
+        <!-- DASHBOARD SECTION -->
+        <div id="dashboard" class="card hidden">
+            <p>hi, <span id="user-display" style="color: var(--accent)"></span></p>
+            <button class="action-btn" onclick="showSection('setup-area')">write message 🏹</button>
+            <button class="action-btn secondary-btn" onclick="checkInbox()">check inbox 💌</button>
+        </div>
+
+        <!-- CREATE SECTION -->
+        <div id="setup-area" class="card hidden">
+            <textarea id="user-input" placeholder="write something flirty..."></textarea>
+            <p style="font-size: 0.8rem; color: var(--text-dim);">unlock time:</p>
+            <input type="datetime-local" id="unlock-time">
+            <button class="action-btn" onclick="saveMessage()">lock & send ❤️‍🔥</button>
+            <button class="action-btn secondary-btn" onclick="showSection('dashboard')">back</button>
+        </div>
+
+        <!-- INBOX SECTION -->
+        <div id="inbox-area" class="card hidden">
+            <div id="countdown-content">
+                <div style="font-size: 3rem; margin-bottom: 10px;">🔒</div>
+                <div id="timer" class="timer-text">00:00:00</div>
+                <p class="sub-text">patience is sexy... 🕯️</p>
+            </div>
+            
+            <div id="reveal-content" class="hidden">
+                <div style="font-size: 3rem; margin-bottom: 10px;">🔓🤍</div>
+                <div id="final-message"></div>
+            </div>
+            <button class="action-btn secondary-btn" onclick="showSection('dashboard')">back</button>
+        </div>
+
+        <div class="footer-icons">
+            <span>🎞️</span>
+            <span>🤍</span>
+            <span>🕯️</span>
+        </div>
+    </div>
+
+    <script>
+        let currentUser = "";
+        let partnerUser = "";
+
+        // Force lowercase and trim for mobile keyboard auto-caps
+        function showSection(id) {
+            document.getElementById('auth-area').classList.add('hidden');
+            document.getElementById('dashboard').classList.add('hidden');
+            document.getElementById('setup-area').classList.add('hidden');
+            document.getElementById('inbox-area').classList.add('hidden');
+            document.getElementById(id).classList.remove('hidden');
+            window.scrollTo(0, 0); // Reset scroll on view change
+        }
+
+        function showDashboard() {
+            currentUser = document.getElementById('my-name').value.toLowerCase().trim();
+            partnerUser = document.getElementById('partner-name').value.toLowerCase().trim();
+            if(!currentUser || !partnerUser) return alert("we need names! ✨");
+            
+            document.getElementById('user-display').innerText = currentUser;
+            showSection('dashboard');
+        }
+
+        function saveMessage() {
+            const msg = document.getElementById('user-input').value;
+            const time = document.getElementById('unlock-time').value;
+            if(!msg || !time) return alert("fill it out, babe! ❤️‍🔥");
+
+            const capsule = { 
+                from: currentUser, 
+                to: partnerUser, 
+                message: msg, 
+                time: new Date(time).getTime() 
+            };
+            localStorage.setItem('nuzzle_' + partnerUser, JSON.stringify(capsule));
+            
+            alert("locked & sent! 🏹");
+            showSection('dashboard');
+        }
+
+        let timerInterval;
+        function checkInbox() {
+            const data = localStorage.getItem('nuzzle_' + currentUser);
+            if(!data) return alert("nothing for you yet... 🕊️");
+            
+            const capsule = JSON.parse(data);
+            showSection('inbox-area');
+            
+            if(timerInterval) clearInterval(timerInterval);
+
+            timerInterval = setInterval(function() {
+                const now = new Date().getTime();
+                const distance = capsule.time - now;
+
+                if (distance < 0) {
+                    clearInterval(timerInterval);
+                    document.getElementById('countdown-content').classList.add('hidden');
+                    document.getElementById('reveal-content').classList.remove('hidden');
+                    document.getElementById('final-message').innerText = capsule.message;
+                } else {
+                    document.getElementById('countdown-content').classList.remove('hidden');
+                    document.getElementById('reveal-content').classList.add('hidden');
+                    
+                    const h = Math.floor((distance % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+                    const m = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
+                    const s = Math.floor((distance % (1000 * 60)) / 1000);
+                    document.getElementById("timer").innerHTML = 
+                        (h < 10 ? "0"+h : h) + ":" + (m < 10 ? "0"+m : m) + ":" + (s < 10 ? "0"+s : s);
+                }
+            }, 1000);
+        }
+    </script>
+</body>
+</html>
