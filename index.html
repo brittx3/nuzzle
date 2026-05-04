@@ -6,193 +6,43 @@
     <title>nuzzle 🤍</title>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-messaging-compat.js"></script>
     <style>
-        :root {
-            --bg: #fff5f7;
-            --card: #ffffff;
-            --accent: #ffb3c1;
-            --accent-dark: #ff758f;
-            --text: #5e4b4e;
-        }
-
-        body {
-            background-color: var(--bg);
-            background-image: radial-gradient(#ffcad4 0.5px, transparent 0.5px);
-            background-size: 20px 20px;
-            color: var(--text);
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-            margin: 0;
-            display: flex;
-            justify-content: center;
-            min-height: 100vh;
-            padding-top: 20px;
-        }
-
+        :root { --bg: #fff5f7; --card: #ffffff; --accent: #ffb3c1; --accent-dark: #ff758f; --text: #5e4b4e; }
+        body { background-color: var(--bg); background-image: radial-gradient(#ffcad4 0.5px, transparent 0.5px); background-size: 20px 20px; color: var(--text); font-family: sans-serif; margin: 0; display: flex; justify-content: center; min-height: 100vh; padding-top: 20px; }
         .app-container { width: 100%; max-width: 360px; padding: 20px; text-align: center; }
         h1 { font-size: 3.8rem; margin: 0; font-weight: 800; letter-spacing: -4px; color: var(--accent-dark); text-shadow: 2px 2px 0px #ffffff; }
-        
-        .card { 
-            background: var(--card); 
-            border-radius: 45px; 
-            padding: 35px 25px; 
-            box-shadow: 0 15px 35px rgba(255, 179, 193, 0.3); 
-            margin-bottom: 25px; 
-            border: 2px solid #ffffff;
-            transition: all 0.4s ease;
-        }
-
-        .live-timer-box {
-            background: #fff0f3;
-            border-radius: 30px;
-            padding: 20px;
-            margin: 20px 0;
-            border: 2px dashed var(--accent);
-        }
-
-        .timer-val {
-            font-size: 2.8rem;
-            font-weight: 800;
-            color: var(--accent-dark);
-            font-variant-numeric: tabular-nums;
-        }
-
-        textarea, input { 
-            width: 100%; background: #fff9fa; border: 2px solid var(--bg); 
-            color: var(--text); padding: 18px; border-radius: 20px; 
-            margin: 12px 0; font-size: 16px; box-sizing: border-box; outline: none; 
-        }
-        
-        .action-btn { 
-            background: linear-gradient(135deg, var(--accent), var(--accent-dark)); 
-            color: white; border: none; width: 100%; padding: 20px; 
-            border-radius: 25px; font-size: 1.1rem; font-weight: 800; 
-            cursor: pointer; margin-top: 10px; box-shadow: 0 8px 20px rgba(255, 117, 143, 0.3); 
-        }
-
+        .card { background: var(--card); border-radius: 45px; padding: 35px 25px; box-shadow: 0 15px 35px rgba(255, 179, 193, 0.3); margin-bottom: 25px; border: 2px solid #ffffff; }
+        .live-timer-box { background: #fff0f3; border-radius: 30px; padding: 20px; margin: 20px 0; border: 2px dashed var(--accent); }
+        .timer-val { font-size: 2.8rem; font-weight: 800; color: var(--accent-dark); }
+        textarea, input { width: 100%; background: #fff9fa; border: 2px solid var(--bg); padding: 18px; border-radius: 20px; margin: 12px 0; font-size: 16px; box-sizing: border-box; outline: none; }
+        .action-btn { background: linear-gradient(135deg, var(--accent), var(--accent-dark)); color: white; border: none; width: 100%; padding: 20px; border-radius: 25px; font-size: 1.1rem; font-weight: 800; cursor: pointer; margin-top: 10px; }
         .secondary-btn { background: transparent; color: var(--accent-dark); border: 2px solid var(--accent); margin-top: 15px; }
         .hidden { display: none; }
-        .footer-icons { font-size: 1.8rem; display: flex; justify-content: center; gap: 30px; opacity: 0.6; padding-top: 20px; }
+        #final-message { font-size: 1.25rem; line-height: 1.6; background: var(--bg); padding: 25px; border-radius: 25px; border: 1px dashed var(--accent-dark); }
     </style>
 </head>
 <body>
-
     <div class="app-container">
         <h1>nuzzle</h1>
-
         <div id="dashboard" class="card">
             <div id="active-countdown" class="live-timer-box hidden">
-                <p style="margin: 0; font-weight: 600; font-size: 0.9rem;">next secret in...</p>
+                <p style="margin: 0; font-weight: 600;">next secret in...</p>
                 <div id="main-timer" class="timer-val">00:00:00</div>
             </div>
-            
-            <div id="no-message" class="hidden">
+            <div id="no-message">
                 <p>no secrets waiting... 🕊️</p>
             </div>
-
             <button class="action-btn" onclick="showSection('setup-area')">write message ✍️</button>
-            <button id="notify-btn" class="action-btn secondary-btn" onclick="enableNotifications()">enable pings 🔔</button>
+            <button class="action-btn secondary-btn" onclick="enableNotifications()">enable pings 🔔</button>
         </div>
 
         <div id="setup-area" class="card hidden">
             <textarea id="user-input" placeholder="write something sweet..."></textarea>
-            <p style="font-size: 0.9rem; font-weight: 600; color: var(--accent-dark); margin-bottom: 5px;">unlock time:</p>
             <input type="datetime-local" id="unlock-time">
             <button class="action-btn" onclick="saveToFirebase()">lock & send ❤️‍🔥</button>
             <button class="action-btn secondary-btn" onclick="showSection('dashboard')">back</button>
         </div>
 
-        <div class="footer-icons"><span>🌸</span><span>🎀</span><span>🕯️</span></div>
-    </div>
-
-    <script>
- // Replace with your Firebase Config
-const firebaseConfig = {
-    apiKey: "AIzaSy...",
-    authDomain: "nuzzle-f2d28.firebaseapp.com",
-    projectId: "nuzzle-f2d28",
-    storageBucket: "nuzzle-f2d28.firebasestorage.app",
-    messagingSenderId: "44654509389",
-    appId: "1:44654509389:web:55fc084ec4992c5def8b04",
-    measurementId: "G-QT3HQLVD3T"
-};
-// Then the next line should be firebase.initializeApp(firebaseConfig);
-        
-const 
-
-        firebase.initializeApp(firebaseConfig);
-        const db = firebase.firestore();
-        const messaging = firebase.messaging.isSupported() ? firebase.messaging() : null;
-
-        let globalTimer;
-
-        // Auto-check for messages on load
-        window.onload = () => {
-            syncDashboard();
-        };
-
-        function showSection(id) {
-            document.querySelectorAll('.card').forEach(c => c.classList.add('hidden'));
-            document.getElementById(id).classList.remove('hidden');
-        }
-
-        async function syncDashboard() {
-            db.collection("messages").doc("shared-capsule").onSnapshot((doc) => {
-                if (doc.exists) {
-                    const data = doc.data();
-                    const now = new Date().getTime();
-                    if (data.unlockTime > now) {
-                        document.getElementById('active-countdown').classList.remove('hidden');
-                        document.getElementById('no-message').classList.add('hidden');
-                        startMainTimer(data.unlockTime);
-                    } else {
-                        showReveal(data.message);
-                    }
-                } else {
-                    document.getElementById('no-message').classList.remove('hidden');
-                }
-            });
-        }
-
-        function startMainTimer(target) {
-            if(globalTimer) clearInterval(globalTimer);
-            globalTimer = setInterval(() => {
-                const diff = target - new Date().getTime();
-                if (diff <= 0) {
-                    clearInterval(globalTimer);
-                    syncDashboard();
-                } else {
-                    const h = Math.floor(diff / 3600000);
-                    const m = Math.floor((diff % 3600000) / 60000);
-                    const s = Math.floor((diff % 60000) / 1000);
-                    document.getElementById('main-timer').innerText = 
-                        `${h < 10 ? '0'+h : h}:${m < 10 ? '0'+m : m}:${s < 10 ? '0'+s : s}`;
-                }
-            }, 1000);
-        }
-
-        async function saveToFirebase() {
-            const msg = document.getElementById('user-input').value;
-            const time = document.getElementById('unlock-time').value;
-            if(!msg || !time) return;
-
-            await db.collection("messages").doc("shared-capsule").set({
-                message: msg,
-                unlockTime: new Date(time).getTime(),
-                sentAt: firebase.firestore.FieldValue.serverTimestamp()
-            });
-            alert("locked in the cloud! ☁️🎀");
-            showSection('dashboard');
-        }
-
-        function enableNotifications() {
-            if (!messaging) return alert("notifications not supported on this browser! 🎀");
-            Notification.requestPermission().then((permission) => {
-                if (permission === 'granted') {
-                    alert("pings enabled! Andrey will get a notification when you send. 🏹");
-                }
-            });
-        }
-    </script>
-</body>
-</html>
+        <div id="inbox-area" class="card hidden">
+            <div id="reveal-content">
+                <div style="font-size: 3.5rem
