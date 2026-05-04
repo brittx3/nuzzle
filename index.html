@@ -2,47 +2,115 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>nuzzle 🤍</title>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
     <style>
-        :root { --bg: #fff5f7; --card: #ffffff; --accent: #ffb3c1; --accent-dark: #ff758f; --text: #5e4b4e; }
-        body { background-color: var(--bg); background-image: radial-gradient(#ffcad4 0.5px, transparent 0.5px); background-size: 20px 20px; color: var(--text); font-family: sans-serif; margin: 0; display: flex; justify-content: center; min-height: 100vh; padding-top: 20px; }
-        .app-container { width: 100%; max-width: 360px; padding: 20px; text-align: center; }
-        h1 { font-size: 3.8rem; margin: 0; font-weight: 800; letter-spacing: -4px; color: var(--accent-dark); text-shadow: 2px 2px 0px #ffffff; }
-        .card { background: var(--card); border-radius: 45px; padding: 35px 25px; box-shadow: 0 15px 35px rgba(255, 179, 193, 0.3); margin-bottom: 25px; border: 2px solid #ffffff; }
-        .live-timer-box { background: #fff0f3; border-radius: 30px; padding: 20px; margin: 20px 0; border: 2px dashed var(--accent); }
-        .timer-val { font-size: 2.8rem; font-weight: 800; color: var(--accent-dark); }
-        textarea, input { width: 100%; background: #fff9fa; border: 2px solid var(--bg); padding: 18px; border-radius: 20px; margin: 12px 0; font-size: 16px; box-sizing: border-box; outline: none; }
-        .action-btn { background: linear-gradient(135deg, var(--accent), var(--accent-dark)); color: white; border: none; width: 100%; padding: 20px; border-radius: 25px; font-size: 1.1rem; font-weight: 800; cursor: pointer; margin-top: 10px; }
-        .secondary-btn { background: transparent; color: var(--accent-dark); border: 2px solid var(--accent); margin-top: 15px; }
+        :root { --bg: #fff5f7; --accent: #ffb3c1; --accent-dark: #ff758f; --text: #5e4b4e; }
+        body { background-color: var(--bg); color: var(--text); font-family: sans-serif; display: flex; justify-content: center; padding: 20px; }
+        .app-container { width: 100%; max-width: 360px; text-align: center; }
+        .card { background: white; border-radius: 40px; padding: 30px; box-shadow: 0 10px 30px rgba(255, 179, 193, 0.3); margin-top: 20px; }
+        .action-btn { background: var(--accent-dark); color: white; border: none; width: 100%; padding: 18px; border-radius: 20px; font-weight: bold; margin-top: 10px; cursor: pointer; }
+        textarea, input { width: 100%; padding: 15px; border-radius: 15px; border: 1px solid var(--accent); margin: 10px 0; box-sizing: border-box; }
         .hidden { display: none; }
-        #final-message { font-size: 1.25rem; line-height: 1.6; background: var(--bg); padding: 25px; border-radius: 25px; border: 1px dashed var(--accent-dark); }
+        #main-timer { font-size: 2.5rem; font-weight: bold; color: var(--accent-dark); }
     </style>
 </head>
 <body>
     <div class="app-container">
-        <h1>nuzzle</h1>
+        <h1 style="color:var(--accent-dark)">nuzzle</h1>
+        
         <div id="dashboard" class="card">
-            <div id="active-countdown" class="live-timer-box hidden">
-                <p style="margin: 0; font-weight: 600;">next secret in...</p>
-                <div id="main-timer" class="timer-val">00:00:00</div>
+            <div id="timer-section" class="hidden">
+                <p>opening in...</p>
+                <div id="main-timer">00:00:00</div>
             </div>
-            <div id="no-message">
+            <div id="empty-section">
                 <p>no secrets waiting... 🕊️</p>
             </div>
-            <button class="action-btn" onclick="showSection('setup-area')">write message ✍️</button>
-            <button class="action-btn secondary-btn" onclick="enableNotifications()">enable pings 🔔</button>
+            <button class="action-btn" onclick="showSection('setup')">write message ✍️</button>
         </div>
 
-        <div id="setup-area" class="card hidden">
-            <textarea id="user-input" placeholder="write something sweet..."></textarea>
-            <input type="datetime-local" id="unlock-time">
-            <button class="action-btn" onclick="saveToFirebase()">lock & send ❤️‍🔥</button>
-            <button class="action-btn secondary-btn" onclick="showSection('dashboard')">back</button>
+        <div id="setup" class="card hidden">
+            <textarea id="msgInput" placeholder="write something sweet..."></textarea>
+            <input type="datetime-local" id="timeInput">
+            <button class="action-btn" onclick="sendMsg()">lock & send ❤️‍🔥</button>
+            <button class="action-btn" style="background:#eee; color:#666" onclick="showSection('dashboard')">back</button>
         </div>
 
-        <div id="inbox-area" class="card hidden">
-            <div id="reveal-content">
-                <div style="font-size: 3.5rem
+        <div id="reveal" class="card hidden">
+            <div style="font-size: 3rem;">💝</div>
+            <p id="finalMsg" style="font-size: 1.2rem; line-height: 1.5;"></p>
+            <button class="action-btn" onclick="showSection('dashboard')">back</button>
+        </div>
+    </div>
+
+    <script>
+        const firebaseConfig = {
+            apiKey: "AIzaSyBYE2yJ5j94fgAgx_Jvy1KVal", 
+            authDomain: "nuzzle-f2d28.firebaseapp.com",
+            projectId: "nuzzle-f2d28",
+            storageBucket: "nuzzle-f2d28.firebasestorage.app",
+            messagingSenderId: "44654509389",
+            appId: "1:44654509389:web:55fc084ec4992c5def8b04",
+            measurementId: "G-QT3HQLVD3T"
+        };
+
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.firestore();
+
+        function showSection(id) {
+            document.getElementById('dashboard').classList.add('hidden');
+            document.getElementById('setup').classList.add('hidden');
+            document.getElementById('reveal').classList.add('hidden');
+            document.getElementById(id).classList.remove('hidden');
+        }
+
+        async function sendMsg() {
+            const m = document.getElementById('msgInput').value;
+            const t = document.getElementById('timeInput').value;
+            if(!m || !t) return alert("Please fill everything out!");
+
+            try {
+                await db.collection("messages").doc("shared-capsule").set({
+                    message: m,
+                    unlockTime: new Date(t).getTime()
+                });
+                alert("Locked in the cloud! ☁️");
+                location.reload(); // Refresh the page to show the timer
+            } catch (e) {
+                alert("Error: " + e.message);
+            }
+        }
+
+        // Listen for messages
+        db.collection("messages").doc("shared-capsule").onSnapshot((doc) => {
+            if (doc.exists) {
+                const data = doc.data();
+                const now = new Date().getTime();
+                if (data.unlockTime > now) {
+                    showSection('dashboard');
+                    document.getElementById('timer-section').classList.remove('hidden');
+                    document.getElementById('empty-section').classList.add('hidden');
+                    startTimer(data.unlockTime);
+                } else {
+                    showSection('reveal');
+                    document.getElementById('finalMsg').innerText = data.message;
+                }
+            }
+        });
+
+        function startTimer(target) {
+            setInterval(() => {
+                const diff = target - new Date().getTime();
+                if (diff <= 0) location.reload();
+                const h = Math.floor(diff / 3600000);
+                const m = Math.floor((diff % 3600000) / 60000);
+                const s = Math.floor((diff % 60000) / 1000);
+                document.getElementById('main-timer').innerText = `${h}:${m}:${s}`;
+            }, 1000);
+        }
+    </script>
+</body>
+</html>
