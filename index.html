@@ -4,263 +4,190 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>nuzzle 🤍</title>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-messaging-compat.js"></script>
     <style>
         :root {
-            --bg: #000000;
-            --glass: #161616;
-            --accent: #ff3b5c;
-            --text-main: #ffffff;
-            --text-dim: #a0a0a0;
-            --input-bg: #222222;
-        }
-
-        /* Essential for mobile: handles the jumping address bar */
-        html, body {
-            height: 100%;
-            margin: 0;
-            padding: 0;
-            background-color: var(--bg);
-            overflow-x: hidden;
+            --bg: #fff5f7;
+            --card: #ffffff;
+            --accent: #ffb3c1;
+            --accent-dark: #ff758f;
+            --text: #5e4b4e;
         }
 
         body {
-            color: var(--text-main);
+            background-color: var(--bg);
+            background-image: radial-gradient(#ffcad4 0.5px, transparent 0.5px);
+            background-size: 20px 20px;
+            color: var(--text);
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-            display: flex;
-            justify-content: center;
-            align-items: flex-start; /* Better for mobile scrolling */
-            padding-top: 40px;
-        }
-
-        .app-container {
-            width: 100%;
-            max-width: 375px;
-            padding: 20px;
-            text-align: center;
-            box-sizing: border-box;
-        }
-
-        h1 {
-            font-size: 3.5rem;
             margin: 0;
-            font-weight: 800;
-            letter-spacing: -3px;
-            background: linear-gradient(to bottom, #fff, #a0a0a0);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-        }
-
-        .status-pill {
-            display: inline-block;
-            background: rgba(255, 255, 255, 0.1);
-            padding: 6px 16px;
-            border-radius: 20px;
-            font-size: 0.8rem;
-            color: var(--text-dim);
-            margin: 10px 0 30px 0;
-        }
-
-        .card {
-            background: var(--glass);
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            border-radius: 40px;
-            padding: 40px 24px;
-            box-shadow: 0 20px 40px rgba(0,0,0,0.5);
-            margin-bottom: 20px;
-        }
-
-        input, textarea {
-            width: 100%;
-            background: var(--input-bg) !important;
-            border: 1px solid rgba(255,255,255,0.1);
-            color: white !important;
-            padding: 15px;
-            border-radius: 15px;
-            margin: 10px 0;
-            font-size: 16px; /* Prevents auto-zoom on iPhone */
-            box-sizing: border-box;
-            outline: none;
-            -webkit-appearance: none; /* Fixes iOS shadows */
-        }
-
-        textarea { height: 120px; resize: none; }
-
-        .action-btn {
-            background: var(--accent);
-            color: white;
-            border: none;
-            width: 100%;
-            padding: 18px;
-            border-radius: 20px;
-            font-size: 1.1rem;
-            font-weight: 700;
-            cursor: pointer;
-            margin-top: 10px;
             display: flex;
-            align-items: center;
             justify-content: center;
-            gap: 10px;
-            touch-action: manipulation; /* Faster taps on mobile */
+            min-height: 100vh;
+            padding-top: 20px;
         }
 
-        .secondary-btn {
-            background: transparent;
-            color: var(--text-dim);
-            border: 1px solid var(--text-dim);
-            margin-top: 15px;
+        .app-container { width: 100%; max-width: 360px; padding: 20px; text-align: center; }
+        h1 { font-size: 3.8rem; margin: 0; font-weight: 800; letter-spacing: -4px; color: var(--accent-dark); text-shadow: 2px 2px 0px #ffffff; }
+        
+        .card { 
+            background: var(--card); 
+            border-radius: 45px; 
+            padding: 35px 25px; 
+            box-shadow: 0 15px 35px rgba(255, 179, 193, 0.3); 
+            margin-bottom: 25px; 
+            border: 2px solid #ffffff;
+            transition: all 0.4s ease;
         }
 
-        .timer-text {
-            font-size: 2.2rem;
-            font-weight: 800;
-            color: var(--accent);
+        .live-timer-box {
+            background: #fff0f3;
+            border-radius: 30px;
+            padding: 20px;
             margin: 20px 0;
+            border: 2px dashed var(--accent);
+        }
+
+        .timer-val {
+            font-size: 2.8rem;
+            font-weight: 800;
+            color: var(--accent-dark);
             font-variant-numeric: tabular-nums;
         }
 
-        .hidden { display: none; }
+        textarea, input { 
+            width: 100%; background: #fff9fa; border: 2px solid var(--bg); 
+            color: var(--text); padding: 18px; border-radius: 20px; 
+            margin: 12px 0; font-size: 16px; box-sizing: border-box; outline: none; 
+        }
         
-        .footer-icons {
-            padding-bottom: 40px;
-            font-size: 1.5rem;
-            display: flex;
-            justify-content: center;
-            gap: 25px;
-            opacity: 0.4;
+        .action-btn { 
+            background: linear-gradient(135deg, var(--accent), var(--accent-dark)); 
+            color: white; border: none; width: 100%; padding: 20px; 
+            border-radius: 25px; font-size: 1.1rem; font-weight: 800; 
+            cursor: pointer; margin-top: 10px; box-shadow: 0 8px 20px rgba(255, 117, 143, 0.3); 
         }
 
-        #final-message {
-            font-size: 1.2rem;
-            line-height: 1.5;
-            color: #fff;
-            background: rgba(255,255,255,0.05);
-            padding: 20px;
-            border-radius: 20px;
-            word-wrap: break-word;
-        }
+        .secondary-btn { background: transparent; color: var(--accent-dark); border: 2px solid var(--accent); margin-top: 15px; }
+        .hidden { display: none; }
+        .footer-icons { font-size: 1.8rem; display: flex; justify-content: center; gap: 30px; opacity: 0.6; padding-top: 20px; }
     </style>
 </head>
 <body>
 
     <div class="app-container">
         <h1>nuzzle</h1>
-        <div id="status" class="status-pill">waiting for you... 🫧</div>
 
-        <!-- AUTH SECTION -->
-        <div id="auth-area" class="card">
-            <input type="text" id="my-name" placeholder="your name">
-            <input type="text" id="partner-name" placeholder="partner's name">
-            <button class="action-btn" onclick="showDashboard()">enter 🤍</button>
-        </div>
-
-        <!-- DASHBOARD SECTION -->
-        <div id="dashboard" class="card hidden">
-            <p>hi, <span id="user-display" style="color: var(--accent)"></span></p>
-            <button class="action-btn" onclick="showSection('setup-area')">write message 🏹</button>
-            <button class="action-btn secondary-btn" onclick="checkInbox()">check inbox 💌</button>
-        </div>
-
-        <!-- CREATE SECTION -->
-        <div id="setup-area" class="card hidden">
-            <textarea id="user-input" placeholder="write something flirty..."></textarea>
-            <p style="font-size: 0.8rem; color: var(--text-dim);">unlock time:</p>
-            <input type="datetime-local" id="unlock-time">
-            <button class="action-btn" onclick="saveMessage()">lock & send ❤️‍🔥</button>
-            <button class="action-btn secondary-btn" onclick="showSection('dashboard')">back</button>
-        </div>
-
-        <!-- INBOX SECTION -->
-        <div id="inbox-area" class="card hidden">
-            <div id="countdown-content">
-                <div style="font-size: 3rem; margin-bottom: 10px;">🔒</div>
-                <div id="timer" class="timer-text">00:00:00</div>
-                <p class="sub-text">patience is sexy... 🕯️</p>
+        <div id="dashboard" class="card">
+            <div id="active-countdown" class="live-timer-box hidden">
+                <p style="margin: 0; font-weight: 600; font-size: 0.9rem;">next secret in...</p>
+                <div id="main-timer" class="timer-val">00:00:00</div>
             </div>
             
-            <div id="reveal-content" class="hidden">
-                <div style="font-size: 3rem; margin-bottom: 10px;">🔓🤍</div>
-                <div id="final-message"></div>
+            <div id="no-message" class="hidden">
+                <p>no secrets waiting... 🕊️</p>
             </div>
+
+            <button class="action-btn" onclick="showSection('setup-area')">write message ✍️</button>
+            <button id="notify-btn" class="action-btn secondary-btn" onclick="enableNotifications()">enable pings 🔔</button>
+        </div>
+
+        <div id="setup-area" class="card hidden">
+            <textarea id="user-input" placeholder="write something sweet..."></textarea>
+            <p style="font-size: 0.9rem; font-weight: 600; color: var(--accent-dark); margin-bottom: 5px;">unlock time:</p>
+            <input type="datetime-local" id="unlock-time">
+            <button class="action-btn" onclick="saveToFirebase()">lock & send ❤️‍🔥</button>
             <button class="action-btn secondary-btn" onclick="showSection('dashboard')">back</button>
         </div>
 
-        <div class="footer-icons">
-            <span>🎞️</span>
-            <span>🤍</span>
-            <span>🕯️</span>
-        </div>
+        <div class="footer-icons"><span>🌸</span><span>🎀</span><span>🕯️</span></div>
     </div>
 
     <script>
-        let currentUser = "";
-        let partnerUser = "";
+        // Replace with your Firebase Config
+        const firebaseConfig = {
+            apiKey: "PASTE_HERE",
+            authDomain: "PASTE_HERE",
+            projectId: "PASTE_HERE",
+            storageBucket: "PASTE_HERE",
+            messagingSenderId: "PASTE_HERE",
+            appId: "PASTE_HERE"
+        };
 
-        // Force lowercase and trim for mobile keyboard auto-caps
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.firestore();
+        const messaging = firebase.messaging.isSupported() ? firebase.messaging() : null;
+
+        let globalTimer;
+
+        // Auto-check for messages on load
+        window.onload = () => {
+            syncDashboard();
+        };
+
         function showSection(id) {
-            document.getElementById('auth-area').classList.add('hidden');
-            document.getElementById('dashboard').classList.add('hidden');
-            document.getElementById('setup-area').classList.add('hidden');
-            document.getElementById('inbox-area').classList.add('hidden');
+            document.querySelectorAll('.card').forEach(c => c.classList.add('hidden'));
             document.getElementById(id).classList.remove('hidden');
-            window.scrollTo(0, 0); // Reset scroll on view change
         }
 
-        function showDashboard() {
-            currentUser = document.getElementById('my-name').value.toLowerCase().trim();
-            partnerUser = document.getElementById('partner-name').value.toLowerCase().trim();
-            if(!currentUser || !partnerUser) return alert("we need names! ✨");
-            
-            document.getElementById('user-display').innerText = currentUser;
-            showSection('dashboard');
-        }
-
-        function saveMessage() {
-            const msg = document.getElementById('user-input').value;
-            const time = document.getElementById('unlock-time').value;
-            if(!msg || !time) return alert("fill it out, babe! ❤️‍🔥");
-
-            const capsule = { 
-                from: currentUser, 
-                to: partnerUser, 
-                message: msg, 
-                time: new Date(time).getTime() 
-            };
-            localStorage.setItem('nuzzle_' + partnerUser, JSON.stringify(capsule));
-            
-            alert("locked & sent! 🏹");
-            showSection('dashboard');
-        }
-
-        let timerInterval;
-        function checkInbox() {
-            const data = localStorage.getItem('nuzzle_' + currentUser);
-            if(!data) return alert("nothing for you yet... 🕊️");
-            
-            const capsule = JSON.parse(data);
-            showSection('inbox-area');
-            
-            if(timerInterval) clearInterval(timerInterval);
-
-            timerInterval = setInterval(function() {
-                const now = new Date().getTime();
-                const distance = capsule.time - now;
-
-                if (distance < 0) {
-                    clearInterval(timerInterval);
-                    document.getElementById('countdown-content').classList.add('hidden');
-                    document.getElementById('reveal-content').classList.remove('hidden');
-                    document.getElementById('final-message').innerText = capsule.message;
+        async function syncDashboard() {
+            db.collection("messages").doc("shared-capsule").onSnapshot((doc) => {
+                if (doc.exists) {
+                    const data = doc.data();
+                    const now = new Date().getTime();
+                    if (data.unlockTime > now) {
+                        document.getElementById('active-countdown').classList.remove('hidden');
+                        document.getElementById('no-message').classList.add('hidden');
+                        startMainTimer(data.unlockTime);
+                    } else {
+                        showReveal(data.message);
+                    }
                 } else {
-                    document.getElementById('countdown-content').classList.remove('hidden');
-                    document.getElementById('reveal-content').classList.add('hidden');
-                    
-                    const h = Math.floor((distance % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
-                    const m = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
-                    const s = Math.floor((distance % (1000 * 60)) / 1000);
-                    document.getElementById("timer").innerHTML = 
-                        (h < 10 ? "0"+h : h) + ":" + (m < 10 ? "0"+m : m) + ":" + (s < 10 ? "0"+s : s);
+                    document.getElementById('no-message').classList.remove('hidden');
+                }
+            });
+        }
+
+        function startMainTimer(target) {
+            if(globalTimer) clearInterval(globalTimer);
+            globalTimer = setInterval(() => {
+                const diff = target - new Date().getTime();
+                if (diff <= 0) {
+                    clearInterval(globalTimer);
+                    syncDashboard();
+                } else {
+                    const h = Math.floor(diff / 3600000);
+                    const m = Math.floor((diff % 3600000) / 60000);
+                    const s = Math.floor((diff % 60000) / 1000);
+                    document.getElementById('main-timer').innerText = 
+                        `${h < 10 ? '0'+h : h}:${m < 10 ? '0'+m : m}:${s < 10 ? '0'+s : s}`;
                 }
             }, 1000);
+        }
+
+        async function saveToFirebase() {
+            const msg = document.getElementById('user-input').value;
+            const time = document.getElementById('unlock-time').value;
+            if(!msg || !time) return;
+
+            await db.collection("messages").doc("shared-capsule").set({
+                message: msg,
+                unlockTime: new Date(time).getTime(),
+                sentAt: firebase.firestore.FieldValue.serverTimestamp()
+            });
+            alert("locked in the cloud! ☁️🎀");
+            showSection('dashboard');
+        }
+
+        function enableNotifications() {
+            if (!messaging) return alert("notifications not supported on this browser! 🎀");
+            Notification.requestPermission().then((permission) => {
+                if (permission === 'granted') {
+                    alert("pings enabled! Andrey will get a notification when you send. 🏹");
+                }
+            });
         }
     </script>
 </body>
