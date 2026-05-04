@@ -10,16 +10,22 @@
         :root { --bg: #fff5f7; --accent: #ffb3c1; --accent-dark: #ff758f; --text: #5e4b4e; }
         body { background-color: var(--bg); color: var(--text); font-family: sans-serif; display: flex; justify-content: center; padding: 20px; }
         .app-container { width: 100%; max-width: 360px; text-align: center; }
-        .card { background: white; border-radius: 40px; padding: 30px; box-shadow: 0 10px 30px rgba(255, 179, 193, 0.3); margin-top: 20px; }
+        .card { background: white; border-radius: 40px; padding: 25px; box-shadow: 0 10px 30px rgba(255,179,193,0.3); margin-top: 20px; position: relative; }
         .action-btn { background: var(--accent-dark); color: white; border: none; width: 100%; padding: 18px; border-radius: 20px; font-weight: bold; margin-top: 10px; cursor: pointer; }
+        .secondary-btn { background: white; color: var(--accent-dark); border: 2px solid var(--accent); }
         textarea, input { width: 100%; padding: 15px; border-radius: 15px; border: 1px solid var(--accent); margin: 10px 0; box-sizing: border-box; }
         .hidden { display: none; }
+        .memory-item { background: #fff9fa; padding: 15px; border-radius: 15px; margin-bottom: 10px; text-align: left; border-left: 4px solid var(--accent); }
         #main-timer { font-size: 2.5rem; font-weight: bold; color: var(--accent-dark); }
+        .ping-toggle { font-size: 0.8rem; margin-bottom: 10px; display: flex; align-items: center; justify-content: center; gap: 8px; cursor: pointer; color: var(--accent-dark); }
     </style>
 </head>
 <body>
     <div class="app-container">
-        <h1 style="color:var(--accent-dark)">nuzzle</h1>
+        <div class="ping-toggle" onclick="togglePings()">
+            <span id="ping-icon">🔔</span> <span id="ping-text">Pings: Off</span>
+        </div>
+        <h1 style="color:var(--accent-dark); margin: 5px 0;">nuzzle</h1>
         
         <div id="dashboard" class="card">
             <div id="timer-section" class="hidden">
@@ -30,19 +36,20 @@
                 <p>no secrets waiting... 🕊️</p>
             </div>
             <button class="action-btn" onclick="showSection('setup')">write message ✍️</button>
+            <button class="action-btn secondary-btn" onclick="loadInbox()">inbox 📥</button>
         </div>
 
         <div id="setup" class="card hidden">
             <textarea id="msgInput" placeholder="write something sweet..."></textarea>
             <input type="datetime-local" id="timeInput">
             <button class="action-btn" onclick="sendMsg()">lock & send ❤️‍🔥</button>
-            <button class="action-btn" style="background:#eee; color:#666" onclick="showSection('dashboard')">back</button>
+            <button class="action-btn secondary-btn" onclick="showSection('dashboard')">back</button>
         </div>
 
-        <div id="reveal" class="card hidden">
-            <div style="font-size: 3rem;">💝</div>
-            <p id="finalMsg" style="font-size: 1.2rem; line-height: 1.5;"></p>
-            <button class="action-btn" onclick="showSection('dashboard')">back</button>
+        <div id="inbox" class="card hidden">
+            <h2 style="color: var(--accent-dark)">inbox</h2>
+            <div id="memory-list" style="max-height: 300px; overflow-y: auto;"></div>
+            <button class="action-btn secondary-btn" onclick="showSection('dashboard')">back</button>
         </div>
     </div>
 
@@ -63,53 +70,102 @@
         function showSection(id) {
             document.getElementById('dashboard').classList.add('hidden');
             document.getElementById('setup').classList.add('hidden');
-            document.getElementById('reveal').classList.add('hidden');
+            document.getElementById('inbox').classList.add('hidden');
             document.getElementById(id).classList.remove('hidden');
         }
 
         async function sendMsg() {
             const m = document.getElementById('msgInput').value;
             const t = document.getElementById('timeInput').value;
-            if(!m || !t) return alert("Please fill everything out!");
+            const author = prompt("Who is sending this? (Brittney/Andrei)");
+            if(!m || !t || !author) return alert("Fill it out first! ✨");
 
             try {
-                await db.collection("messages").doc("shared-capsule").set({
+                await db.collection("memories").add({
                     message: m,
-                    unlockTime: new Date(t).getTime()
+                    unlockTime: new Date(t).getTime(),
+                    createdAt: Date.now(),
+                    from: author
                 });
                 alert("Locked in the cloud! ☁️");
-                location.reload(); // Refresh the page to show the timer
-            } catch (e) {
-                alert("Error: " + e.message);
-            }
+                showSection('dashboard');
+            } catch (e) { alert("Error: " + e.message); }
         }
 
-        // Listen for messages
-        db.collection("messages").doc("shared-capsule").onSnapshot((doc) => {
-            if (doc.exists) {
+        // Timer and Alert Logic
+        db.collection("memories").orderBy("unlockTime", "asc").onSnapshot((querySnapshot) => {
+            const now = Date.now();
+            let nextMessage = null;
+
+            querySnapshot.forEach((doc) => {
                 const data = doc.data();
-                const now = new Date().getTime();
-                if (data.unlockTime > now) {
-                    showSection('dashboard');
-                    document.getElementById('timer-section').classList.remove('hidden');
-                    document.getElementById('empty-section').classList.add('hidden');
-                    startTimer(data.unlockTime);
-                } else {
-                    showSection('reveal');
-                    document.getElementById('finalMsg').innerText = data.message;
+                if (data.unlockTime > now && !nextMessage) {
+                    nextMessage = data;
                 }
+            });
+
+            if (nextMessage) {
+                document.getElementById('timer-section').classList.remove('hidden');
+                document.getElementById('empty-section').classList.add('hidden');
+                startTimer(nextMessage.unlockTime);
+            } else {
+                document.getElementById('timer-section').classList.add('hidden');
+                document.getElementById('empty-section').classList.remove('hidden');
             }
         });
 
+        async function loadInbox() {
+            showSection('inbox');
+            const list = document.getElementById('memory-list');
+            list.innerHTML = "";
+            const now = Date.now();
+            const snapshot = await db.collection("memories").orderBy("unlockTime", "desc").get();
+            snapshot.forEach(doc => {
+                const data = doc.data();
+                if (data.unlockTime <= now) {
+                    const item = document.createElement('div');
+                    item.className = 'memory-item';
+                    item.innerHTML = `<strong>From ${data.from}:</strong><br>${data.message}`;
+                    list.appendChild(item);
+                }
+            });
+            if (list.innerHTML === "") list.innerHTML = "No messages unlocked yet... 🕊️";
+        }
+
         function startTimer(target) {
-            setInterval(() => {
-                const diff = target - new Date().getTime();
-                if (diff <= 0) location.reload();
-                const h = Math.floor(diff / 3600000);
-                const m = Math.floor((diff % 3600000) / 60000);
-                const s = Math.floor((diff % 60000) / 1000);
-                document.getElementById('main-timer').innerText = `${h}:${m}:${s}`;
+            const interval = setInterval(() => {
+                const diff = target - Date.now();
+                if (diff <= 0) {
+                    clearInterval(interval);
+                    if (Notification.permission === "granted") {
+                        new Notification("nuzzle: A new secret has opened! 🏹");
+                    }
+                } else {
+                    const h = Math.floor(diff / 3600000);
+                    const m = Math.floor((diff % 3600000) / 60000);
+                    const s = Math.floor((diff % 60000) / 1000);
+                    document.getElementById('main-timer').innerText = `${h}:${m}:${s}`;
+                }
             }, 1000);
+        }
+
+        function togglePings() {
+            if (!("Notification" in window)) {
+                alert("Browser does not support notifications.");
+                return;
+            }
+            Notification.requestPermission().then(permission => {
+                const icon = document.getElementById('ping-icon');
+                const text = document.getElementById('ping-text');
+                if (permission === "granted") {
+                    icon.innerText = "🔔";
+                    text.innerText = "Pings: On";
+                    alert("Pings enabled! You'll be notified when a secret opens. 🏹");
+                } else {
+                    icon.innerText = "🔕";
+                    text.innerText = "Pings: Blocked";
+                }
+            });
         }
     </script>
 </body>
